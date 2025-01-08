@@ -7,14 +7,15 @@
     <title>Upload Medical Report</title>
 </head>
 
-<body>
-    <h1>Upload Medical Report</h1>
-    <form method="post" enctype="multipart/form-data">
+<body class="container">
+    <h1 class="my-4">Upload Medical Report</h1>
+    <form method="post" enctype="multipart/form-data" class="mb-4">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Upload</button>
+        <button type="submit" class="btn btn-primary">Upload</button>
     </form>
-    <a href="/">Back to Home</a>
+    <a href="/" class="btn btn-secondary">Back to Home</a>
 </body>
+
 
 </html>

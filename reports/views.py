@@ -1,8 +1,9 @@
+from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from forms import MedicalReportForm
-from models import MedicalReport
-from utils import extract_text_from_image, explain_medical_text
+from .forms import MedicalReportForm
+from .models import MedicalReport
+from .utils import extract_text_from_image, explain_medical_text
 import os
 
 
@@ -30,7 +31,7 @@ def upload_report(request):
 @login_required
 def report_detail(request, pk):
     report = MedicalReport.objects.get(pk=pk, user=request.user)
-
+    
     explanation = None
     if report.extracted_text:
         explanation = explain_medical_text(report.extracted_text)
@@ -40,4 +41,12 @@ def report_detail(request, pk):
         'explanation': explanation,
     })
 
-
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')  # Redirect to login page after signup
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})

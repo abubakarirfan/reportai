@@ -3,6 +3,8 @@ from django.conf import settings
 import pytesseract
 from PIL import Image
 
+pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+
 
 def extract_text_from_image(image_path):
     # PIL Image object
