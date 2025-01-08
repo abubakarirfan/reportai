@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Details</title>
+</head>
+
+<body>
+    <h1>Report Details</h1>
+
+    <h2>Uploaded Image:</h2>
+    <img src="{{ report.image.url }}" alt="Medical Report" style="max-width: 100%; height: auto;">
+
+    <h2>Extracted Text:</h2>
+    <pre>{{ report.extracted_text }}</pre>
+
+    <h2>Explanation:</h2>
+    {% if explanation %}
+    <p>{{ explanation }}</p>
+    {% else %}
+    <p>No explanation available.</p>
+    {% endif %}
+
+    <a href="/reports/upload/">Upload Another Report</a>
+</body>
+
+</html>
