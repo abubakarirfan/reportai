@@ -1,0 +1,50 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.sqlite3
+
+# Virtual Environment
+venv/
+env/
+
+# Django
+*.log
+*.pot
+*.py[cod]
+db.sqlite3
+media/
+staticfiles/
+
+# Environment variables
+.env
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# Byte-compiled or package files
+*.egg
+*.egg-info/
+dist/
+build/
+*.eggs
+
+# Tests
+coverage/
+.tox/
+
+# Others
+*.lock
