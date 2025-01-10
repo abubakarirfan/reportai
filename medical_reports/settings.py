@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 import os
 OPENAI_API_KEY = os.getenv(
-    'OPENAI_API_KEY', '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')
+    'OPENAI_API_KEY', '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')
 
 
 # Quick-start development settings - unsuitable for production

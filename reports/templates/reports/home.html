@@ -3,7 +3,9 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h2>Welcome to Medical Reports SaaS</h2>
-<p>Upload your medical reports, and we will extract, explain, and even translate the contents for you!</p>
-<a href="/reports/upload/">Get Started</a>
+<div class="text-center">
+    <h1>Welcome to the Medical Reports App</h1>
+    <p>Upload and analyze your medical reports effortlessly.</p>
+    <a href="{% url 'upload_report' %}" class="btn btn-primary btn-lg mt-3">Get Started</a>
+</div>
 {% endblock %}

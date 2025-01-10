@@ -1,21 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Medical Report</title>
-</head>
+{% block title %}Upload Medical Report{% endblock %}
 
-<body class="container">
-    <h1 class="my-4">Upload Medical Report</h1>
-    <form method="post" enctype="multipart/form-data" class="mb-4">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Upload</button>
-    </form>
-    <a href="/" class="btn btn-secondary">Back to Home</a>
-</body>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4>Upload Medical Report</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Select your medical report:</label>
+                        <input type="file" class="form-control" id="image" name="image" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Upload</button>
+                </form>
 
-
-</html>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

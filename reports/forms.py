@@ -6,3 +6,4 @@ class MedicalReportForm(forms.ModelForm):
     class Meta:
         model = MedicalReport
         fields = ['image']
+
