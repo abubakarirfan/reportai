@@ -39,8 +39,7 @@ def upload_report(request):
                     if not any(keyword in extracted_text.lower() for keyword in medical_keywords):
                         messages.error(
                             request,
-                            f"The uploaded file '{uploaded_file.name}' does not appear to be a medical report. Please upload a valid medical document."
-                        )
+                            f"The uploaded file '{uploaded_file.name}' does not appear to be a medical report. Please upload a valid medical document.", extra_tags='upload_page')
                         report.delete()  # Delete the invalid report
                         # Re-render with error
                         return render(request, 'reports/upload.html', {'form': form})
@@ -53,15 +52,16 @@ def upload_report(request):
                     report.explanation = explanation
                     report.save()
 
-                    messages.success(
-                        request, "Report uploaded and processed successfully!")
                     return redirect('report_detail', pk=report.pk)
                 except Exception as e:
-                    messages.error(request, f"Error processing the file: {e}")
+                    messages.error(
+                        request, f"Error processing the file: {e}", extra_tags='upload_page')
             else:
-                messages.error(request, "No file was uploaded.")
+                messages.error(request, "No file was uploaded.",
+                               extra_tags='upload_page')
         else:
-            messages.error(request, "Invalid form submission.")
+            messages.error(request, "Invalid form submission.",
+                           extra_tags='upload_page')
     else:
         form = MedicalReportForm()
     return render(request, 'reports/upload.html', {'form': form})
