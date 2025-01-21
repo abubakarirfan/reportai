@@ -8,4 +8,8 @@ urlpatterns = [
     path('list/', views.report_list, name='report_list'),
     path('<int:pk>/rename/', views.rename_report_file, name='rename_report_file'),
     path('<int:pk>/download/', views.generate_pdf, name='generate_pdf'),
+    path('reports/<int:pk>/toggle_favorite/',
+         views.toggle_favorite, name='toggle_favorite'),
+    path('reports/<int:pk>/upload_version/',
+         views.upload_report, name='upload_version'),
 ]

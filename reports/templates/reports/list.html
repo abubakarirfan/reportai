@@ -6,6 +6,19 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <h2>Uploaded Reports</h2>
+
+        <!-- Add Filter Buttons -->
+        <div class="mb-3">
+            <a href="{% url 'report_list' %}?favorites=true"
+                class="btn {% if favorites_only %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                View Favorites
+            </a>
+            <a href="{% url 'report_list' %}"
+                class="btn {% if not favorites_only %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                View All
+            </a>
+        </div>
+
         {% if page_obj %}
         <table class="table table-striped">
             <thead>
@@ -21,9 +34,23 @@
                     <td>{{ report.image.name|cut:"reports/"|cut:".jpg"|cut:".png"|cut:".jpeg" }}</td>
                     <td>{{ report.created_at|date:"F j, Y, g:i a" }}</td>
                     <td>
+                        <!-- View and Rename Buttons -->
                         <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">View</a>
                         <a href="{% url 'rename_report_file' report.pk %}" class="btn btn-sm btn-warning">Rename</a>
+                    
+                        <!-- Toggle Favorite Icon -->
+                        <form action="{% url 'toggle_favorite' report.pk %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button class="btn btn-sm border-0 p-0" type="submit" style="background: none;">
+                                {% if report.favorite %}
+                                <i class="fas fa-heart text-danger" style="font-size: 1.2rem;"></i> <!-- Filled Heart -->
+                                {% else %}
+                                <i class="far fa-heart text-secondary" style="font-size: 1.2rem;"></i> <!-- Empty Heart -->
+                                {% endif %}
+                            </button>
+                        </form>
                     </td>
+
                 </tr>
                 {% endfor %}
             </tbody>

@@ -1,3 +1,6 @@
+from io import BytesIO
+from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render, get_object_or_404
 from xhtml2pdf import pisa
 from django.http import HttpResponse
@@ -17,17 +20,40 @@ from .utils import extract_text_from_image, explain_medical_text
 import os
 
 
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import MedicalReport
+from .forms import MedicalReportForm
+from .utils import extract_text_from_image, explain_medical_text
+
+
 @login_required
-def upload_report(request):
+def upload_report(request, pk=None):
+    """
+    Handles uploading a new report or a new version of an existing report.
+
+    If `pk` is provided, it assumes this is a new version of the report with ID `pk`.
+    """
+    parent_report = None
+
+    # If pk is provided, get the parent report
+    if pk:
+        parent_report = get_object_or_404(
+            MedicalReport, pk=pk, user=request.user)
+
     if request.method == 'POST':
         form = MedicalReportForm(request.POST, request.FILES)
         if form.is_valid():
             uploaded_file = request.FILES.get('image')
             if uploaded_file:
                 try:
-                    # Save the file as a MedicalReport instance
+                    # Create a new MedicalReport instance
                     report = MedicalReport(
-                        user=request.user, image=uploaded_file)
+                        user=request.user,
+                        image=uploaded_file,
+                        parent_report=parent_report  # Set parent if this is a version
+                    )
                     report.save()
 
                     # Extract text from the uploaded image
@@ -39,9 +65,10 @@ def upload_report(request):
                     if not any(keyword in extracted_text.lower() for keyword in medical_keywords):
                         messages.error(
                             request,
-                            f"The uploaded file '{uploaded_file.name}' does not appear to be a medical report. Please upload a valid medical document.", extra_tags='upload_page')
-                        report.delete()  # Delete the invalid report
-                        # Re-render with error
+                            f"The uploaded file '{uploaded_file.name}' does not appear to be a medical report. Please upload a valid medical document.",
+                            extra_tags='upload_page'
+                        )
+                        report.delete()  # Delete invalid report
                         return render(request, 'reports/upload.html', {'form': form})
 
                     # Generate explanation using Gemini API
@@ -52,10 +79,15 @@ def upload_report(request):
                     report.explanation = explanation
                     report.save()
 
+                    messages.success(
+                        request,
+                        'Report uploaded successfully!' if not parent_report else 'New version uploaded successfully!'
+                    )
                     return redirect('report_detail', pk=report.pk)
                 except Exception as e:
                     messages.error(
-                        request, f"Error processing the file: {e}", extra_tags='upload_page')
+                        request, f"Error processing the file: {e}", extra_tags='upload_page'
+                    )
             else:
                 messages.error(request, "No file was uploaded.",
                                extra_tags='upload_page')
@@ -64,20 +96,28 @@ def upload_report(request):
                            extra_tags='upload_page')
     else:
         form = MedicalReportForm()
-    return render(request, 'reports/upload.html', {'form': form})
+
+    return render(request, 'reports/upload.html', {
+        'form': form,
+        'parent_report': parent_report
+    })
+
+
+@login_required
+def toggle_favorite(request, pk):
+    report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
+    report.favorite = not report.favorite
+    report.save()
+    return redirect('report_list')  # Redirect to the reports list page
 
 
 @login_required
 def report_detail(request, pk):
-    # Retrieve the report for the logged-in user
     report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
-
-    # Explanation is already stored in the database, so no reprocessing is needed
-    explanation = report.explanation
 
     return render(request, 'reports/detail.html', {
         'report': report,
-        'explanation': explanation,
+        'explanation': report.explanation,
     })
 
 
@@ -94,11 +134,26 @@ def signup(request):
 
 @login_required
 def report_list(request):
-    reports = MedicalReport.objects.filter(user=request.user)
-    paginator = Paginator(reports, 5)  # Show 10 reports per page
+    # Check if the user wants to view only favorites
+    favorites_only = request.GET.get('favorites') == 'true'
+
+    # Filter reports based on the user's request
+    if favorites_only:
+        reports = MedicalReport.objects.filter(
+            user=request.user, favorite=True)
+    else:
+        reports = MedicalReport.objects.filter(user=request.user)
+
+    # Paginate the results
+    paginator = Paginator(reports, 5)  # Show 5 reports per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'reports/list.html', {'page_obj': page_obj})
+
+    # Pass additional context for filtering
+    return render(request, 'reports/list.html', {
+        'page_obj': page_obj,
+        'favorites_only': favorites_only,  # Indicate if filtering by favorites
+    })
 
 
 @login_required
@@ -143,22 +198,31 @@ def rename_report_file(request, pk):
 
 @login_required
 def generate_pdf(request, pk):
-    # Get the report for the logged-in user
+    # Fetch the report and its version history
     report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
+    version_history = report.get_all_versions
 
-    # Render the HTML template for the PDF
-    html = render_to_string('reports/pdf_template.html', {
+    # Render the HTML content for the PDF
+    html_content = render_to_string('reports/pdf_template.html', {
         'report': report,
-        'explanation': report.explanation  # Pass the explanation if available
+        'version_history': version_history,
     })
 
-    # Create a response object to send the PDF
+    # Generate PDF
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{report.clean_file_name()}.pdf"'
 
-    # Generate the PDF
-    pisa_status = pisa.CreatePDF(html, dest=response)
-    if pisa_status.err:
-        return HttpResponse("Error generating PDF", status=500)
+    # Use BytesIO to hold the PDF in memory
+    pdf_file = BytesIO()
+    pisa_status = pisa.CreatePDF(
+        BytesIO(html_content.encode('utf-8')), dest=pdf_file)
 
+    # If PDF generation fails, return an error response
+    if pisa_status.err:
+        return HttpResponse('Error generating PDF.', status=500)
+
+    # Write the generated PDF to the HTTP response
+    pdf_file.seek(0)
+    response.write(pdf_file.read())
+    pdf_file.close()
     return response

@@ -7,8 +7,13 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-primary text-white">
+                {% if parent_report %}
+                <h4>Upload New Version for {{ parent_report.image.name|cut:"reports/" }}</h4>
+                {% else %}
                 <h4>Upload Medical Report</h4>
+                {% endif %}
             </div>
+
             <div class="card-body">
                 <!-- Form for file upload -->
                 <form id="upload-form" method="post" enctype="multipart/form-data">

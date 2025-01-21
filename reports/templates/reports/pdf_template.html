@@ -3,85 +3,86 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Medical Report</title>
+    <title>Report PDF</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
-            line-height: 1.6;
+            margin: 20px;
         }
 
-        header {
+        .header {
             text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header img {
+            width: 100px;
+        }
+
+        .section {
             margin-bottom: 20px;
         }
 
-        header img {
-            height: 60px;
+        .section-title {
+            font-weight: bold;
             margin-bottom: 10px;
         }
 
-        h1 {
-            color: #007bff;
-            font-size: 24px;
-        }
-
-        section {
-            margin-bottom: 20px;
-        }
-
-        h2 {
-            font-size: 18px;
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-        }
-
-        p {
-            margin: 10px 0;
-            text-align: justify;
-        }
-
-        footer {
-            position: fixed;
-            bottom: 20px;
+        .table {
             width: 100%;
-            text-align: center;
-            font-size: 12px;
-            color: #888;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .table th {
+            background-color: #f4f4f4;
         }
     </style>
 </head>
 
 <body>
-    {% load static %}
-    <header>
-        <img src="{% static 'images/logo.png' %}" alt="ReportsAI Logo">
+    <div class="header">
+        <img src="{{ STATIC_URL }}logo.png" alt="Logo">
         <h1>Medical Report</h1>
-    </header>
+    </div>
 
-    <section>
-        <h2>Uploaded At:</h2>
-        <p>{{ report.created_at|date:"F j, Y, g:i a" }}</p>
-    </section>
+    <div class="section">
+        <p><strong>Uploaded By:</strong> {{ report.user.username }}</p>
+        <p><strong>Uploaded At:</strong> {{ report.created_at|date:"F j, Y, g:i a" }}</p>
+    </div>
 
-    <section>
-        <h2>File Name:</h2>
-        <p>{{ report.clean_file_name }}</p>
-    </section>
+    <div class="section">
+        <div class="section-title">Explanation:</div>
+        <p>{{ report.explanation|safe }}</p>
+    </div>
 
-    <section>
-        <h2>Explanation:</h2>
-        {% if explanation %}
-        <p>{{ explanation|safe }}</p>
-        {% else %}
-        <p>No explanation available for this report.</p>
-        {% endif %}
-    </section>
-
-    <footer>
-        <p>Generated via ReportsAI Application</p>
-    </footer>
+    {% if version_history %}
+    <div class="section">
+        <div class="section-title">Version History:</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Uploaded At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for version in version_history %}
+                <tr>
+                    <td>{{ version.clean_file_name }}</td>
+                    <td>{{ version.created_at|date:"F j, Y, g:i a" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 </body>
 
 </html>

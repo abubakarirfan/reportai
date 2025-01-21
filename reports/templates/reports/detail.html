@@ -17,11 +17,23 @@
                 {% endif %}
             </div>
             <div class="card-footer text-center">
-                <a href="{% url 'upload_report' %}" class="btn btn-secondary">Upload Another Report</a>
+                <a href="{% url 'upload_version' report.pk %}" class="btn btn-secondary">Upload New Version</a>
                 <a href="{% url 'generate_pdf' report.pk %}" class="btn btn-success">Download PDF</a>
             </div>
         </div>
+
+        <!-- Version History -->
+        {% if report.get_all_versions %}
+        <h5 class="mt-4">Version History</h5>
+        <ul class="list-group">
+            {% for version in report.get_all_versions %}
+            <li class="list-group-item">
+                <strong>Version:</strong> {{ version.created_at|date:"F j, Y, g:i a" }}
+                <a href="{% url 'report_detail' version.pk %}" class="btn btn-sm btn-primary float-end">View</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </div>
 </div>
-
 {% endblock %}
