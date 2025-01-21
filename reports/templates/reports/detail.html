@@ -18,6 +18,7 @@
             </div>
             <div class="card-footer text-center">
                 <a href="{% url 'upload_report' %}" class="btn btn-secondary">Upload Another Report</a>
+                <a href="{% url 'generate_pdf' report.pk %}" class="btn btn-success">Download PDF</a>
             </div>
         </div>
     </div>

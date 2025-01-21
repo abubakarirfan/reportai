@@ -7,5 +7,5 @@ urlpatterns = [
     path('<int:pk>/', views.report_detail, name='report_detail'),
     path('list/', views.report_list, name='report_list'),
     path('<int:pk>/rename/', views.rename_report_file, name='rename_report_file'),
-
+    path('<int:pk>/download/', views.generate_pdf, name='generate_pdf'),
 ]

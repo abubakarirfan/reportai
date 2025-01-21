@@ -1,3 +1,6 @@
+from xhtml2pdf import pisa
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -137,3 +140,26 @@ def rename_report_file(request, pk):
             report.image.name)[0]})  # Pre-fill with current name
 
     return render(request, 'reports/rename.html', {'form': form, 'report': report})
+
+
+@login_required
+def generate_pdf(request, pk):
+    # Get the report for the logged-in user
+    report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
+
+    # Render the HTML template for the PDF
+    html = render_to_string('reports/pdf_template.html', {
+        'report': report,
+        'explanation': report.explanation  # Pass the explanation if available
+    })
+
+    # Create a response object to send the PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{report.clean_file_name()}.pdf"'
+
+    # Generate the PDF
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    if pisa_status.err:
+        return HttpResponse("Error generating PDF", status=500)
+
+    return response

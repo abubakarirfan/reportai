@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Medical Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header img {
+            height: 60px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #007bff;
+            font-size: 24px;
+        }
+
+        section {
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        p {
+            margin: 10px 0;
+            text-align: justify;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <img src="{% static 'images/logo.png' %}" alt="ReportsAI Logo">
+        <h1>Medical Report</h1>
+    </header>
+
+    <section>
+        <h2>Uploaded At:</h2>
+        <p>{{ report.created_at|date:"F j, Y, g:i a" }}</p>
+    </section>
+
+    <section>
+        <h2>File Name:</h2>
+        <p>{{ report.clean_file_name }}</p>
+    </section>
+
+    <section>
+        <h2>Explanation:</h2>
+        {% if explanation %}
+        <p>{{ explanation|safe }}</p>
+        {% else %}
+        <p>No explanation available for this report.</p>
+        {% endif %}
+    </section>
+
+    <footer>
+        <p>Generated via ReportsAI Application</p>
+    </footer>
+</body>
+
+</html>
