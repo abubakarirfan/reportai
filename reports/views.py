@@ -1,3 +1,4 @@
+from django.shortcuts import render, get_object_or_404
 from xhtml2pdf import pisa
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -68,18 +69,16 @@ def upload_report(request):
 
 @login_required
 def report_detail(request, pk):
-    try:
-        report = MedicalReport.objects.get(pk=pk)
-    except MedicalReport.DoesNotExist:
-        raise Http404("Report not found.")
+    # Retrieve the report for the logged-in user
+    report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
 
-    if report.user != request.user:
-        raise PermissionDenied(
-            "You do not have permission to view this report.")
+    # Explanation is already stored in the database, so no reprocessing is needed
+    explanation = report.explanation
 
-    explanation = explain_medical_text(
-        report.extracted_text) if report.extracted_text else None
-    return render(request, 'reports/detail.html', {'report': report, 'explanation': explanation})
+    return render(request, 'reports/detail.html', {
+        'report': report,
+        'explanation': explanation,
+    })
 
 
 def signup(request):
