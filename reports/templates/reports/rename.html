@@ -1,17 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Medical Report{% endblock %}
+{% block title %}Rename File{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h4>Upload Medical Report</h4>
+                <h4>Rename File</h4>
             </div>
             <div class="card-body">
-
-                <!-- Display messages -->
                 {% if messages %}
                 <div>
                     {% for message in messages %}
@@ -23,14 +21,12 @@
                 </div>
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data">
+                <form method="post">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="image" class="form-label">Select your medical report:</label>
-                        <input type="file" class="form-control" id="image" name="image" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Upload</button>
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100">Rename</button>
                 </form>
+                <a href="{% url 'report_list' %}" class="btn btn-secondary mt-3 w-100">Cancel</a>
             </div>
         </div>
     </div>

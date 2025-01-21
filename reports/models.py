@@ -1,5 +1,13 @@
+import os
 from django.db import models
 from django.conf import settings
+
+
+def report_upload_path(instance, filename):
+    # Generate a new file name: username_originalfilename
+    username = instance.user.username
+    base, ext = os.path.splitext(filename)
+    return f"reports/{username}_{base}{ext}"
 
 
 class MedicalReport(models.Model):
@@ -10,5 +18,9 @@ class MedicalReport(models.Model):
     explanation = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean_file_name(self):
+        """Returns the file name without path or extension."""
+        return os.path.splitext(os.path.basename(self.image.name))[0]
+
     def __str__(self):
-        return self.image.name
+        return self.clean_file_name()

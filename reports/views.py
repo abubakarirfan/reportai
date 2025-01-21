@@ -1,7 +1,12 @@
+from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.core.paginator import Paginator
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .forms import MedicalReportForm
+from .forms import MedicalReportForm, RenameFileForm
 from .models import MedicalReport
 from django.contrib import messages
 from .utils import extract_text_from_image, explain_medical_text
@@ -13,7 +18,6 @@ def upload_report(request):
     if request.method == 'POST':
         form = MedicalReportForm(request.POST, request.FILES)
         if form.is_valid():
-            # Get the uploaded file
             uploaded_file = request.FILES.get('image')
             if uploaded_file:
                 try:
@@ -30,9 +34,12 @@ def upload_report(request):
                         "diagnosis", "treatment", "prescription", "blood", "test", "pathology", "report"]
                     if not any(keyword in extracted_text.lower() for keyword in medical_keywords):
                         messages.error(
-                            request, "The uploaded document does not appear to be a medical report.")
+                            request,
+                            f"The uploaded file '{uploaded_file.name}' does not appear to be a medical report. Please upload a valid medical document."
+                        )
                         report.delete()  # Delete the invalid report
-                        return redirect('upload_report')
+                        # Re-render with error
+                        return render(request, 'reports/upload.html', {'form': form})
 
                     # Generate explanation using Gemini API
                     explanation = explain_medical_text(extracted_text)
@@ -44,7 +51,7 @@ def upload_report(request):
 
                     messages.success(
                         request, "Report uploaded and processed successfully!")
-                    return redirect('report_list')
+                    return redirect('report_detail', pk=report.pk)
                 except Exception as e:
                     messages.error(request, f"Error processing the file: {e}")
             else:
@@ -58,16 +65,19 @@ def upload_report(request):
 
 @login_required
 def report_detail(request, pk):
-    report = MedicalReport.objects.get(pk=pk, user=request.user)
-    
-    explanation = None
-    if report.extracted_text:
-        explanation = explain_medical_text(report.extracted_text)
+    try:
+        report = MedicalReport.objects.get(pk=pk)
+    except MedicalReport.DoesNotExist:
+        raise Http404("Report not found.")
 
-    return render(request, 'reports/detail.html', {
-        'report': report,
-        'explanation': explanation,
-    })
+    if report.user != request.user:
+        raise PermissionDenied(
+            "You do not have permission to view this report.")
+
+    explanation = explain_medical_text(
+        report.extracted_text) if report.extracted_text else None
+    return render(request, 'reports/detail.html', {'report': report, 'explanation': explanation})
+
 
 def signup(request):
     if request.method == 'POST':
@@ -83,4 +93,47 @@ def signup(request):
 @login_required
 def report_list(request):
     reports = MedicalReport.objects.filter(user=request.user)
-    return render(request, 'reports/list.html', {'reports': reports})
+    paginator = Paginator(reports, 5)  # Show 10 reports per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'reports/list.html', {'page_obj': page_obj})
+
+
+@login_required
+def rename_report_file(request, pk):
+    report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
+
+    if request.method == 'POST':
+        form = RenameFileForm(request.POST)
+        if form.is_valid():
+            new_name = form.cleaned_data['new_name']
+            old_file_path = report.image.path
+            # Preserve original file extension
+            file_extension = os.path.splitext(old_file_path)[1]
+            new_file_path = os.path.join(
+                os.path.dirname(old_file_path), f"{new_name}{file_extension}"
+            )
+
+            try:
+                # Check if the new file name already exists
+                if os.path.exists(new_file_path):
+                    messages.error(
+                        request, "A file with this name already exists. Please choose a different name.")
+                else:
+                    # Rename the physical file
+                    os.rename(old_file_path, new_file_path)
+
+                    # Update the database record
+                    report.image.name = os.path.relpath(
+                        new_file_path, settings.MEDIA_ROOT)
+                    report.save()
+
+                    messages.success(request, "File renamed successfully!")
+                    return redirect('report_list')
+            except Exception as e:
+                messages.error(request, f"Error renaming file: {e}")
+    else:
+        form = RenameFileForm(initial={'new_name': os.path.splitext(
+            report.image.name)[0]})  # Pre-fill with current name
+
+    return render(request, 'reports/rename.html', {'form': form, 'report': report})
