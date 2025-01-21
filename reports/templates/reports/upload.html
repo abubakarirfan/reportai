@@ -10,19 +10,6 @@
                 <h4>Upload Medical Report</h4>
             </div>
             <div class="card-body">
-
-                <!-- Display messages
-                {% if messages %}
-                <div>
-                    {% for message in messages %}
-                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}"
-                        role="alert">
-                        {{ message }}
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %} -->
-
                 <!-- Form for file upload -->
                 <form id="upload-form" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
@@ -32,6 +19,19 @@
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Upload</button>
                 </form>
+
+                <!-- Display messages specific to this page -->
+                <div id="messages-container" style="margin-top: 20px;">
+                    {% if messages %}
+                    {% for message in messages %}
+                    {% if 'upload_page' in message.tags %}
+                    <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">
+                        {{ message }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
 
                 <!-- Loading spinner -->
                 <div id="loading-spinner" style="display: none; text-align: center; margin-top: 20px;">
@@ -48,6 +48,10 @@
 <script>
     // Show the spinner when the form is submitted
     document.getElementById('upload-form').addEventListener('submit', function () {
+        // Clear old messages before form submission
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = '';
+        // Show the loading spinner
         document.getElementById('loading-spinner').style.display = 'block';
     });
 </script>
