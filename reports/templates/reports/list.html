@@ -7,7 +7,18 @@
     <div class="col-md-8">
         <h2>Uploaded Reports</h2>
 
-        <!-- Add Filter Buttons -->
+        <form method="get" class="mb-3">
+            <label for="category">Filter by Category:</label>
+            <select name="category" class="form-control" onchange="this.form.submit()">
+                <option value="All" {% if selected_category == "All" %}selected{% endif %}>All Categories</option>
+                {% for key, value in categories.items %}
+                <option value="{{ key }}" {% if selected_category == key|stringformat:"s" %}selected{% endif %}>{{ value }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <!-- Favorite Reports Filter -->
         <div class="mb-3">
             <a href="{% url 'report_list' %}?favorites=true"
                 class="btn {% if favorites_only %}btn-primary{% else %}btn-outline-primary{% endif %}">
@@ -25,6 +36,7 @@
                 <tr>
                     <th>File Name</th>
                     <th>Uploaded At</th>
+                    <th>Category</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -33,24 +45,26 @@
                 <tr>
                     <td>{{ report.image.name|cut:"reports/"|cut:".jpg"|cut:".png"|cut:".jpeg" }}</td>
                     <td>{{ report.created_at|date:"F j, Y, g:i a" }}</td>
+                    <td>{{ report.category }}</td>
                     <td>
                         <!-- View and Rename Buttons -->
                         <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">View</a>
                         <a href="{% url 'rename_report_file' report.pk %}" class="btn btn-sm btn-warning">Rename</a>
-                    
+
                         <!-- Toggle Favorite Icon -->
                         <form action="{% url 'toggle_favorite' report.pk %}" method="post" style="display:inline;">
                             {% csrf_token %}
                             <button class="btn btn-sm border-0 p-0" type="submit" style="background: none;">
                                 {% if report.favorite %}
-                                <i class="fas fa-heart text-danger" style="font-size: 1.2rem;"></i> <!-- Filled Heart -->
+                                <i class="fas fa-heart text-danger" style="font-size: 1.2rem;"></i>
+                                <!-- Filled Heart -->
                                 {% else %}
-                                <i class="far fa-heart text-secondary" style="font-size: 1.2rem;"></i> <!-- Empty Heart -->
+                                <i class="far fa-heart text-secondary" style="font-size: 1.2rem;"></i>
+                                <!-- Empty Heart -->
                                 {% endif %}
                             </button>
                         </form>
                     </td>
-
                 </tr>
                 {% endfor %}
             </tbody>

@@ -46,13 +46,15 @@ def upload_report(request, pk=None):
         form = MedicalReportForm(request.POST, request.FILES)
         if form.is_valid():
             uploaded_file = request.FILES.get('image')
+            category = form.cleaned_data.get("category")
             if uploaded_file:
                 try:
                     # Create a new MedicalReport instance
                     report = MedicalReport(
                         user=request.user,
                         image=uploaded_file,
-                        parent_report=parent_report  # Set parent if this is a version
+                        parent_report=parent_report,  # Set parent if this is a version
+                        category=category
                     )
                     report.save()
 
@@ -134,25 +136,33 @@ def signup(request):
 
 @login_required
 def report_list(request):
-    # Check if the user wants to view only favorites
-    favorites_only = request.GET.get('favorites') == 'true'
+    selected_category = request.GET.get('category', 'All')
 
-    # Filter reports based on the user's request
-    if favorites_only:
-        reports = MedicalReport.objects.filter(
-            user=request.user, favorite=True)
-    else:
-        reports = MedicalReport.objects.filter(user=request.user)
+    reports = MedicalReport.objects.filter(user=request.user)
 
-    # Paginate the results
-    paginator = Paginator(reports, 5)  # Show 5 reports per page
+    if selected_category != "All":  # Simplified condition
+      try:
+        selected_category = str(selected_category)
+        reports = reports.filter(category=selected_category)
+      except:
+        pass
+
+    paginator = Paginator(reports, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Pass additional context for filtering
+    categories = {
+        "Blood Test": "Blood Test",
+        "X-Ray": "X-Ray",
+        "Prescription": "Prescription",
+        "MRI": "MRI",
+    }
+
     return render(request, 'reports/list.html', {
         'page_obj': page_obj,
-        'favorites_only': favorites_only,  # Indicate if filtering by favorites
+        'categories': categories,
+        # Keep as string for template
+        'selected_category': str(selected_category)
     })
 
 

@@ -5,7 +5,10 @@ from .models import MedicalReport
 class MedicalReportForm(forms.ModelForm):
     class Meta:
         model = MedicalReport
-        fields = ['image']
+        fields = ['image', 'category']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-control'}),
+        }
 
 
 class RenameFileForm(forms.Form):

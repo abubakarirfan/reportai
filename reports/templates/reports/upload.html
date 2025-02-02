@@ -16,14 +16,24 @@
 
             <div class="card-body">
                 <!-- Form for file upload -->
-                <form id="upload-form" method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="image" class="form-label">Select your medical report:</label>
                         <input type="file" class="form-control" id="image" name="image" required>
                     </div>
+                    <!-- Category Selection -->
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Select Category:</label>
+                        <select name="category" class="form-control" required>
+                            {% for key, value in form.fields.category.choices %}
+                            <option value="{{ key }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary w-100">Upload</button>
                 </form>
+
 
                 <!-- Display messages specific to this page -->
                 <div id="messages-container" style="margin-top: 20px;">

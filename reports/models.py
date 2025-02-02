@@ -12,6 +12,14 @@ def report_upload_path(instance, filename):
 
 
 class MedicalReport(models.Model):
+    CATEGORY_CHOICES = [
+        ('Blood Test', 'Blood Test'),
+        ('X-Ray', 'X-Ray'),
+        ('MRI Scan', 'MRI Scan'),
+        ('Prescription', 'Prescription'),
+        ('Pathology Report', 'Pathology Report'),
+        ('Other', 'Other'),
+    ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='reports/')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,13 +29,16 @@ class MedicalReport(models.Model):
     parent_report = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='versions'
     )  # Reference to the parent report
+    category = models.CharField(
+        max_length=50, choices=CATEGORY_CHOICES, default='Other')
+
 
     def clean_file_name(self):
         """Returns the file name without path or extension."""
         return os.path.splitext(os.path.basename(self.image.name))[0]
 
     def __str__(self):
-        return self.clean_file_name()
+        return f"{self.clean_file_name()} ({self.category})"
 
     @property
     def get_all_versions(self):
