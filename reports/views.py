@@ -1,3 +1,4 @@
+from django.db.models import Q
 from io import BytesIO
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404, redirect
@@ -28,6 +29,22 @@ from .forms import MedicalReportForm
 from .utils import extract_text_from_image, explain_medical_text
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import MedicalReport
+from .forms import MedicalReportForm
+from .utils import extract_text_from_image, explain_medical_text
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import MedicalReport
+from .forms import MedicalReportForm
+from .utils import extract_text_from_image, explain_medical_text
+
+
 @login_required
 def upload_report(request, pk=None):
     """
@@ -47,8 +64,19 @@ def upload_report(request, pk=None):
         if form.is_valid():
             uploaded_file = request.FILES.get('image')
             category = form.cleaned_data.get("category")
+
             if uploaded_file:
                 try:
+                    # Ensure the user isn't uploading the same file again
+                    existing_report = MedicalReport.objects.filter(
+                        user=request.user, image=uploaded_file.name
+                    ).exists()
+
+                    if existing_report:
+                        messages.error(
+                            request, "This report has already been uploaded.", extra_tags='upload_page')
+                        return render(request, 'reports/upload.html', {'form': form})
+
                     # Create a new MedicalReport instance
                     report = MedicalReport(
                         user=request.user,
@@ -61,7 +89,7 @@ def upload_report(request, pk=None):
                     # Extract text from the uploaded image
                     extracted_text = extract_text_from_image(report.image.path)
 
-                    # Check for medical keywords in the extracted text
+                    # Validate if the uploaded file is a medical report
                     medical_keywords = [
                         "diagnosis", "treatment", "prescription", "blood", "test", "pathology", "report"]
                     if not any(keyword in extracted_text.lower() for keyword in medical_keywords):
@@ -86,16 +114,19 @@ def upload_report(request, pk=None):
                         'Report uploaded successfully!' if not parent_report else 'New version uploaded successfully!'
                     )
                     return redirect('report_detail', pk=report.pk)
+
                 except Exception as e:
                     messages.error(
-                        request, f"Error processing the file: {e}", extra_tags='upload_page'
-                    )
+                        request, f"Error processing the file: {e}", extra_tags='upload_page')
+
             else:
                 messages.error(request, "No file was uploaded.",
                                extra_tags='upload_page')
+
         else:
             messages.error(request, "Invalid form submission.",
                            extra_tags='upload_page')
+
     else:
         form = MedicalReportForm()
 
@@ -110,7 +141,8 @@ def toggle_favorite(request, pk):
     report = get_object_or_404(MedicalReport, pk=pk, user=request.user)
     report.favorite = not report.favorite
     report.save()
-    return redirect('report_list')  # Redirect to the reports list page
+    # Redirect to the reports list page
+    return redirect(request.META.get("HTTP_REFERER", "report_list"))
 
 
 @login_required
@@ -136,21 +168,34 @@ def signup(request):
 
 @login_required
 def report_list(request):
-    selected_category = request.GET.get('category', 'All')
+    """
+    View to display a list of uploaded reports with filtering options.
+    Supports:
+    - Filtering by category
+    - Showing only favorite reports
+    - Pagination
+    """
+    category = request.GET.get('category', 'All')  # Default to 'All'
+    favorites_only = request.GET.get(
+        'favorites', 'false') == 'true'  # Convert to boolean
 
+    # Fetch reports for the logged-in user
     reports = MedicalReport.objects.filter(user=request.user)
 
-    if selected_category != "All":  # Simplified condition
-      try:
-        selected_category = str(selected_category)
-        reports = reports.filter(category=selected_category)
-      except:
-        pass
+    # Apply category filter (ignore if 'All' is selected)
+    if category and category != 'All':
+        reports = reports.filter(category=category)
 
-    paginator = Paginator(reports, 5)
+    # Apply favorites filter if selected
+    if favorites_only:
+        reports = reports.filter(favorite=True)
+
+    # Paginate results
+    paginator = Paginator(reports, 5)  # Show 5 reports per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Define available categories (modify as needed)
     categories = {
         "Blood Test": "Blood Test",
         "X-Ray": "X-Ray",
@@ -160,9 +205,9 @@ def report_list(request):
 
     return render(request, 'reports/list.html', {
         'page_obj': page_obj,
+        'selected_category': category,
+        'favorites_only': favorites_only,
         'categories': categories,
-        # Keep as string for template
-        'selected_category': str(selected_category)
     })
 
 
